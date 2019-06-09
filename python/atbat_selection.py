@@ -8,56 +8,42 @@ import numpy as np
 # Python tools
 import sys
 
-# Get info from command line
-first = sys.argv[1]
-last = sys.argv[2]
+# Local imports
+from utils import features, AtBat
 
-# Lookup player
-player_info = playerid_lookup(last, first)
-player_id = player_info["key_mlbam"].iloc[0]  # assume only one line
-start_year = int(player_info["mlb_played_first"].iloc[0])
-end_year = int(player_info["mlb_played_last"].iloc[0])
-# ignore this year
-if end_year == 2019:
-    end_year = 2018
 
-# Get all the stats
-start_date = "{0}-01-01".format(start_year)
-end_date = "{0}-12-31".format(end_year)
-print("Scraping from {0) to {1}".format(start_date, end_date))
-d_all_stats = statcast_pitcher(start_date, end_date, player_id)
+def get_atbats(first, last):
 
-# Only grab strikeouts
-## TODO: Figure out a better metric for this
-d_strikeouts = d_all_stats[d_all_stats["events"] == "strikeout"]
-d_sorted_strikeouts = d_strikeouts.sort_values(["at_bat_number", "pitch_number"])
+    # Lookup player
+    player_info = playerid_lookup(last, first)
+    player_id = player_info["key_mlbam"].iloc[0]  # assume only one line
+    start_year = int(player_info["mlb_played_first"].iloc[0])
+    end_year = int(player_info["mlb_played_last"].iloc[0])
+    # ignore this year
+    if end_year == 2019:
+        end_year = 2018
 
-# Separate out useful columns
-d_sorted_strikeouts = d_sorted_strikeouts[
-    [
-        "pitch_type",
-        "release_speed",
-        "description",
-        "zone",
-        "p_throws",
-        "stand",
-        "type",
-        "balls",
-        "strikes",
-        "outs_when_up",
-        "inning",
-        "release_spin_rate",
-        "at_bat_number",
-        "pitch_number",
-        "pitch_name",
-        "home_score",
-        "away_score",
-        "if_fielding_alignment",
-        "of_fielding_alignment",
-    ]
-]
+    # Get all the stats
+    start_date = "{0}-01-01".format(start_year)
+    end_date = "{0}-12-31".format(end_year)
+    print("Scraping from {0} to {1}".format(start_date, end_date))
+    d_all_stats = statcast_pitcher(start_date, end_date, player_id)
+    d_features = d_all_stats[features]
 
-# Convert these into a dictionary
-d_abs = dict(tuple(sorted_id.groupby("at_bat_number")))
+    # Iterate over strikeout rows, build into AtBat Objects
+    strikeout_rows = d_all_stats.index[d_all_stats["events"] == "strikeout"].to_list()
+    ab_arrays = []
+    for row in strikeout_rows:
+        this_ab = AtBat(d_features, row)    
+        ab_arrays.append(this_ab.np)
 
-# TODO: Convert to a numpy array for loading into keras
+    return ab_arrays
+
+
+if __name__ == '__main__':
+    # Get info from command line
+    first = sys.argv[1]
+    last = sys.argv[2]
+
+    ab = get_atbats(first, last)
+    print(ab[-1])
