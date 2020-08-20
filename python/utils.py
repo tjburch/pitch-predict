@@ -4,7 +4,6 @@ import pandas as pd
 features = [
     "pitch_type",
     "release_speed",
-    "description",
     "zone",
     "p_throws",
     "stand",
@@ -13,14 +12,13 @@ features = [
     "strikes",
     "outs_when_up",
     "inning",
-    "release_spin_rate",
-    "at_bat_number",
     "pitch_number",
     "pitch_name",
     "home_score",
     "away_score",
     "if_fielding_alignment",
     "of_fielding_alignment",
+    # Add players on base
 ]
 
 

@@ -32,18 +32,42 @@ def get_atbats(first, last):
 
     # Iterate over strikeout rows, build into AtBat Objects
     strikeout_rows = d_all_stats.index[d_all_stats["events"] == "strikeout"].to_list()
-    ab_arrays = []
+    at_bats, ab_arrays = [], []
     for row in strikeout_rows:
-        this_ab = AtBat(d_features, row)    
+        this_ab = AtBat(d_features, row)
+        at_bats.append(this_ab)
         ab_arrays.append(this_ab.np)
 
-    return ab_arrays
+    return at_bats, ab_arrays
 
 
 if __name__ == '__main__':
+    from seaborn import pairplot
+    import matplotlib.pyplot as plt
+
     # Get info from command line
     first = sys.argv[1]
     last = sys.argv[2]
 
-    ab = get_atbats(first, last)
-    print(ab[-1])
+    ab, arrays = get_atbats(first, last)
+    np.save(f"data/{first+last}", arrays)
+    # Do some plotting
+    dfs = [x.df for x in ab]
+    concat_abs = pd.concat(dfs)
+    slim_features = [
+        "pitch_type",
+        "release_speed",
+        "zone",
+        "p_throws",
+        "stand",       
+        "type",
+        "balls",
+        "strikes",
+        "outs_when_up",
+        "inning",
+        "pitch_number",
+    ]
+    concat_abs = concat_abs[slim_features]
+    pairplot(concat_abs)
+
+    plt.savefig("vizualizations/{0}_features.png".format(first+last))
