@@ -1,46 +1,54 @@
 
+import numpy as np
 from get_atbats import get_atbats
-from utils import pitch_encoder
+from utils import pitch_encoder, features
 
-
-def generate_data(first, last):
+def generate_dataset(first, last):
     
     # Get all AB micro-dataframes
     at_bats = get_atbats(first, last)
+    at_bat_records = [x.rec_array for x in at_bats]
 
-    n_features = 5 # TODO
-    output_array = np.zeros(len(at_bats),n_features)
+    n_features = len(features) - 1 # subtract 1 for fld/bat score becoming differential
 
     # Add sequential Data
-    for i, ab in enumerate(at_bats):
-        # Get rec_array
-        at_bat_records = at_bats.rec_array
+    array_builder = []
+    for i, ab in enumerate(at_bat_records):
 
         # Set as row in dataframe
-        pitch_types = at_bat_records["pitch_type"]
-        pitch_zones = at_bat_records["zone"]
+        quantities = []
+        pitch_types = ab["pitch_type"]
+        pitch_zones = ab["zone"]
         
         pitches = []
         for t, z in zip(pitch_types, pitch_zones):
-            # TODO: consider parallelization
+            
             pitches.append(pitch_encoder(pitch_type=t, pitch_zone=z))
-        
-        output_array[i,0] = " ".join(pitches)
+            
+
+        if len(pitches) == 1:
+            quantities.append(str(pitches[0]))
+        else:
+            quantities.append(" ".join([str(p) for p in pitches]))
 
         # Add state data
         # -- ASSUMPTION -- state data is the same for all pitches
-        output_array[i,1] = at_bat_records["stand"][0]
-        output_array[i,2] = at_bat_records["outs_when_up"][0]
-        output_array[i,3] = at_bat_records["inning"][0]
+        quantities.append(ab["stand"][0])
+        quantities.append(ab["outs_when_up"][0])
+        quantities.append(ab["inning"][0])
         # Pitch number -> Pitches at start of AB
-        output_array[i,4] = at_bat_records["pitch_number"][0]
-        # Scoree differential
-        if home_team: # TODO - figure out how to set this
-            output_array[i,5] = at_bat_records["home_score"][0] - at_bat_records["away_score"][0]
-        else: # TODO - figure out how to set this
-            output_array[i,5] = at_bat_records["away_score"][0] - at_bat_records["home_score"][0]
+        quantities.append(ab["pitch_number"][0])
+        # Score differential
+        quantities.append(ab["fld_score"][0] - ab["bat_score"][0])
 
+        # Base occupancy
+        # - NANs for unoccupied, so invert isnan bool
+        # Could afford to make this more robust against steals.
+        quantities.append(np.invert(np.isnan(ab["on_1b"][0])))
+        quantities.append(np.invert(np.isnan(ab["on_2b"][0])))
+        quantities.append(np.invert(np.isnan(ab["on_3b"][0])))
 
-
+        array_builder.append(quantities)
     
+    output_array = np.array(array_builder)
 

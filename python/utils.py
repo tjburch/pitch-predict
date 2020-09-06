@@ -2,17 +2,17 @@ import numpy as np
 import pandas as pd
 
 features = [
-    "pitch_type",
-    "zone",
-    "stand",
-    "outs_when_up",
-    "inning",
-    "pitch_number",
-    "home_score",
-    "away_score", # Change these to run diff
-    "if_fielding_alignment",
-    "of_fielding_alignment",
-    # Add players on base
+    "pitch_type", # Type of pitch thrown (outcome 1)
+    "zone", # Region of strike zone (outcome 2)
+    "stand", # Batter L/R
+    "outs_when_up", # outs in inning
+    "inning", # Current inning
+    "pitch_number", # Number of pitches thrown
+    "fld_score", # Score of fielding team
+    "bat_score", # Score of batting team
+    "on_1b", # Runner on 1b
+    "on_2b", # Runner on 2b
+    "on_3b", # Runner on 3b
 ]
 
 
@@ -56,7 +56,18 @@ def pitch_encoder(pitch_type=None, pitch_zone=None, encode=True):
     # Decide if encoding or decoding
     if encode:
         # Return Index
-        return (pitch_map[pitch_type] * 14 + int(pitch_zone))
+        #if pitch_type.isnan() or pitch_zone.isnan():
+        #    return 999
+
+        if str(pitch_type) == "nan" and str(pitch_zone)=="nan":
+            return 999
+        elif str(pitch_zone) == "nan":
+            return 998
+        elif str(pitch_type) == "nan":
+            return 997
+        else:
+            return (pitch_map[pitch_type] * 14 + int(pitch_zone))
+
     else:
         # Get and return type and zone
         inverse_pitch_map = {v:k for k,v in self.pitch_map.items()}
