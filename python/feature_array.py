@@ -3,11 +3,10 @@ import numpy as np
 from get_atbats import get_atbats
 from utils import pitch_encoder, features
 
-def generate_dataset(first, last):
+def feature_array(first, last):
     
     # Get all AB micro-dataframes
     at_bats = get_atbats(first, last)
-    at_bat_records = [x.rec_array for x in at_bats]
 
     n_features = len(features) - 1 # subtract 1 for fld/bat score becoming differential
 
